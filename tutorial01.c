@@ -16,8 +16,7 @@
 //
 // tutorial01 myvideofile.mpg
 //
-// to write the first five frames from "myvideofile.mpg" to disk in PPM
-// format.
+// to write the first five frames from "myvideofile.mpg" to disk in PPM format.
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -161,13 +160,18 @@ int main(int argc, char *argv[]) {
         );
 
 	      // Save the frame to disk
-      	if(++i<=5)
-	          SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, i);
+      	if(++i<=100){
+            SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, i);
         }
+        else{
+          av_free_packet(&packet);
+          break;
+        }
+      }
     }
 
-    // Free the packet that was allocated by av_read_frame
-    av_free_packet(&packet);
+      // Free the packet that was allocated by av_read_frame
+      av_free_packet(&packet);
   }
 
   // Free the RGB image
