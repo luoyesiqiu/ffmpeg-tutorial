@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
   // av_register_all 只需要调用一次，他会注册所有可用的文件格式和编解码库，当文件被打开时他们将自动匹配相应的编解码库。
   av_register_all();
 
-  // 从传入的第一个参数获得文件路径，这个函数会读取文件头信息，并把信息保存在 pFormatCtx 结构体当中。
-  // 这个函数后面三个参数分别是： 指定文件格式、 缓存大小和格式化选项，当我们设置为 NULL 或 0 时，libavformat 会自动完成这些工作。
+  // 从传入的第二个参数获得文件路径，这个函数会读取文件头信息，并把信息保存在 pFormatCtx 结构体当中。
+  // 这个函数后面两个参数分别是： 指定文件格式、格式化选项，当我们设置为 NULL 或 0 时，libavformat 会自动完成这些工作。
   if(avformat_open_input(&pFormatCtx, argv[1], NULL, NULL)!=0)
     return -1; // Couldn't open file
 
