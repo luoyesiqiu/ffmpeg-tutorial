@@ -52,6 +52,7 @@ typedef struct PacketQueue {
   SDL_mutex *mutex;
   SDL_cond *cond;
 } PacketQueue;
+
 typedef struct VideoPicture {
   SDL_Overlay *bmp;
   int width, height; /* source height & width */
@@ -80,7 +81,7 @@ typedef struct VideoState {
   AVPacket        audio_pkt;
   uint8_t         *audio_pkt_data;
   int             audio_pkt_size;
-  int             audio_hw_buf_size;
+  int             audio_hw_buf_size;  
   double          audio_diff_cum; /* used for AV difference average computation */
   double          audio_diff_avg_coef;
   double          audio_diff_threshold;
@@ -121,13 +122,14 @@ SDL_Surface     *screen;
 VideoState *global_video_state;
 AVPacket flush_pkt;
 
+// 初始化队列
 void packet_queue_init(PacketQueue *q) {
   memset(q, 0, sizeof(PacketQueue));
   q->mutex = SDL_CreateMutex();
   q->cond = SDL_CreateCond();
 }
+//　将数据包放置到队列中
 int packet_queue_put(PacketQueue *q, AVPacket *pkt) {
-
   AVPacketList *pkt1;
   if(pkt != &flush_pkt && av_dup_packet(pkt) < 0) {
     return -1;
@@ -227,6 +229,7 @@ double get_video_clock(VideoState *is) {
 double get_external_clock(VideoState *is) {
   return av_gettime() / 1000000.0;
 }
+
 double get_master_clock(VideoState *is) {
   if(is->av_sync_type == AV_SYNC_VIDEO_MASTER) {
     return get_video_clock(is);
@@ -361,7 +364,6 @@ int decode_frame_from_packet(VideoState *is, AVFrame decoded_frame)
 
 	/* compute destination number of samples */
 	dst_nb_samples = av_rescale_rnd(swr_get_delay(is->sws_ctx_audio, src_rate) + src_nb_samples, dst_rate, src_rate, AV_ROUND_UP);
-
 	/* convert to destination format */
 	ret = swr_convert(is->sws_ctx_audio, dst_data, dst_nb_samples, (const uint8_t **)decoded_frame.data, src_nb_samples);
 	if (ret < 0) {
@@ -637,7 +639,6 @@ void alloc_picture(void *userdata) {
 int queue_picture(VideoState *is, AVFrame *pFrame, double pts) {
 
   VideoPicture *vp;
-  //int dst_pix_fmt;
   AVPicture pict;
 
   /* wait until we have space for a new pic */
@@ -684,8 +685,7 @@ int queue_picture(VideoState *is, AVFrame *pFrame, double pts) {
   if(vp->bmp) {
 
     SDL_LockYUVOverlay(vp->bmp);
-
-    //dst_pix_fmt = PIX_FMT_YUV420P;
+    
     /* point pict at the queue */
 
     pict.data[0] = vp->bmp->pixels[0];
@@ -806,8 +806,8 @@ int video_thread(void *arg) {
   av_free(pFrame);
   return 0;
 }
-int stream_component_open(VideoState *is, int stream_index) {
 
+int stream_component_open(VideoState *is, int stream_index) {
   AVFormatContext *pFormatCtx = is->pFormatCtx;
   AVCodecContext *codecCtx = NULL;
   AVCodec *codec = NULL;
@@ -817,10 +817,8 @@ int stream_component_open(VideoState *is, int stream_index) {
   if(stream_index < 0 || stream_index >= pFormatCtx->nb_streams) {
     return -1;
   }
-
   // Get a pointer to the codec context for the video stream
   codecCtx = pFormatCtx->streams[stream_index]->codec;
-
   if(codecCtx->codec_type == AVMEDIA_TYPE_AUDIO) {
     // Set audio settings from codec info
     wanted_spec.freq = codecCtx->sample_rate;
@@ -892,7 +890,6 @@ int stream_component_open(VideoState *is, int stream_index) {
         );
     codecCtx->get_buffer2 = our_get_buffer;
     codecCtx->release_buffer = our_release_buffer;
-
     break;
   default:
     break;
@@ -904,14 +901,18 @@ int stream_component_open(VideoState *is, int stream_index) {
 int decode_interrupt_cb(void *opaque) {
   return (global_video_state && global_video_state->quit);
 }
-int decode_thread(void *arg) {
 
+int decode_thread(void *arg) {
+// 上半部分的函数没什么新东西；它的工作就是打开文件和找到视频流和音频流的索引。
+// 唯一不同的地方是把格式内容保存到大结构体中。当找到流后，调用另一个将要定义的函数 stream_component_open()。
+// 这是一个一般的分离的方法，自从我们设置很多相似的视频和音频解码的代码，我们通过编写这个函数来重用它们。
   VideoState *is = (VideoState *)arg;
   AVFormatContext *pFormatCtx = NULL;
   AVPacket pkt1, *packet = &pkt1;
-
-  AVDictionary *io_dict = NULL;
-  AVIOInterruptCB callback;
+  // http://www.ffmpeg.org/doxygen/3.1/group__lavu__dict.html#details
+  AVDictionary *io_dict = NULL; // AVDictionary 元数据,Simple key:value store.
+  // http://www.ffmpeg.org/doxygen/3.1/structAVIOInterruptCB.html#details
+  AVIOInterruptCB callback;     // Callback for checking whether to abort blocking functions.
 
   int video_index = -1;
   int audio_index = -1;
@@ -924,26 +925,31 @@ int decode_thread(void *arg) {
   // will interrupt blocking functions if we quit!
   callback.callback = decode_interrupt_cb;
   callback.opaque = is;
+  // http://www.ffmpeg.org/doxygen/3.1/aviobuf_8c.html#ae8589aae955d16ca228b6b9d66ced33d
+  // 使用is->filename的内容初始化is->io_context，用于管理文件的读写
   if (avio_open2(&is->io_context, is->filename, 0, &callback, &io_dict))
   {
     fprintf(stderr, "Unable to open I/O for %s\n", is->filename);
     return -1;
   }
 
-  // Open video file
+  // 从传入的第二个参数获得文件路径，这个函数会读取文件头信息，并把信息保存在 pFormatCtx 结构体当中。
+  // 这个函数后面两个参数分别是： 指定文件格式、格式化选项，当我们设置为 NULL 或 0 时，libavformat 会自动完成这些工作。
   if(avformat_open_input(&pFormatCtx, is->filename, NULL, NULL)!=0)
     return -1; // Couldn't open file
 
   is->pFormatCtx = pFormatCtx;
 
   // Retrieve stream information
+  // 得到流信息
   if(avformat_find_stream_info(pFormatCtx, NULL)<0)
     return -1; // Couldn't find stream information
 
   // Dump information about file onto standard error
+  // 这个函数填充了 pFormatCtx->streams 流信息， 可以通过 dump_format 把信息打印出来：
   av_dump_format(pFormatCtx, 0, is->filename, 0);
 
-  // Find the first video stream
+  // 查找一个音频和视频流
   for(i=0; i<pFormatCtx->nb_streams; i++) {
     if(pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO &&
        video_index < 0) {
@@ -954,6 +960,8 @@ int decode_thread(void *arg) {
       audio_index=i;
     }
   }
+
+  // stream_component_open()函数的作用是找到解码器，设置音频参数，保存重要信息到大结构体中，然后启动音频和视频线程。
   if(audio_index >= 0) {
     stream_component_open(is, audio_index);
   }
@@ -967,33 +975,34 @@ int decode_thread(void *arg) {
   }
 
   // main decode loop
-
+  // 上面都是打开文件和找到视频流和音频流的索引等工作，下面才是主循环
   for(;;) {
     if(is->quit) {
-      break;
+      break;  //　控制循环是否退出
     }
     // seek stuff goes here
     if(is->seek_req) {
       int stream_index= -1;
       int64_t seek_target = is->seek_pos;
-
-      if     (is->videoStream >= 0) stream_index = is->videoStream;
+      if(is->videoStream >= 0) stream_index = is->videoStream;
       else if(is->audioStream >= 0) stream_index = is->audioStream;
 
       if(stream_index>=0){
-	seek_target= av_rescale_q(seek_target, AV_TIME_BASE_Q, pFormatCtx->streams[stream_index]->time_base);
+	        seek_target= av_rescale_q(seek_target, AV_TIME_BASE_Q, pFormatCtx->streams[stream_index]->time_base);
       }
+
       if(av_seek_frame(is->pFormatCtx, stream_index, seek_target, is->seek_flags) < 0) {
-	fprintf(stderr, "%s: error while seeking\n", is->pFormatCtx->filename);
+	        fprintf(stderr, "%s: error while seeking\n", is->pFormatCtx->filename);
       } else {
-	if(is->audioStream >= 0) {
-	  packet_queue_flush(&is->audioq);
-	  packet_queue_put(&is->audioq, &flush_pkt);
-	}
-	if(is->videoStream >= 0) {
-	  packet_queue_flush(&is->videoq);
-	  packet_queue_put(&is->videoq, &flush_pkt);
-	}
+	        if(is->audioStream >= 0) {
+	          packet_queue_flush(&is->audioq);
+	          packet_queue_put(&is->audioq, &flush_pkt);
+	        }
+
+	        if(is->videoStream >= 0) {
+	            packet_queue_flush(&is->videoq);
+	            packet_queue_put(&is->videoq, &flush_pkt);
+	        }     
       }
       is->seek_req = 0;
     }
@@ -1005,10 +1014,10 @@ int decode_thread(void *arg) {
     }
     if(av_read_frame(is->pFormatCtx, packet) < 0) {
       if(is->pFormatCtx->pb->error == 0) {
-	SDL_Delay(100); /* no error; wait for user input */
-	continue;
+	      SDL_Delay(100); /* no error; wait for user input */
+	      continue;
       } else {
-	break;
+	      break;
       }
     }
     // Is this a packet from the video stream?
@@ -1024,6 +1033,7 @@ int decode_thread(void *arg) {
   while(!is->quit) {
     SDL_Delay(100);
   }
+
  fail:
   {
     SDL_Event event;
@@ -1043,14 +1053,9 @@ void stream_seek(VideoState *is, int64_t pos, int rel) {
   }
 }
 int main(int argc, char *argv[]) {
-//int main(void) {
-
   SDL_Event       event;
-  //double          pts;
   VideoState      *is;
-
   is = av_mallocz(sizeof(VideoState));
-
   if(argc < 2) {
     fprintf(stderr, "Usage: test <file>\n");
     exit(1);
@@ -1076,12 +1081,18 @@ int main(int argc, char *argv[]) {
 
   av_strlcpy(is->filename, argv[1], 1024);
 
+
+  // 初始化为视频缓冲准备的锁（pictq）
+  // 因为一旦事件驱动调用视频函数， 视频函数会从 pictq 抽出预解码帧。
+  // 同时， 视频解码器会把信息放进去， 我们不知道那个动作会先发生。
   is->pictq_mutex = SDL_CreateMutex();
   is->pictq_cond = SDL_CreateCond();
 
+  // schedule_refresh 是一个将要定义的函数。它的动作是告诉系统在某个特定的毫秒数后弹出 FF_REFRESH_EVENT 事件。
   schedule_refresh(is, 40);
 
   is->av_sync_type = DEFAULT_AV_SYNC_TYPE;
+  // 生成一个新线程能完全访问原始进程中的内存，启动我们给的线程,在这种情况下， 调用 decode_thread()并与 VideoState 结构体连接。
   is->parse_tid = SDL_CreateThread(decode_thread, is);
   if(!is->parse_tid) {
     av_free(is);
@@ -1091,6 +1102,7 @@ int main(int argc, char *argv[]) {
   av_init_packet(&flush_pkt);
   flush_pkt.data = (unsigned char *)"FLUSH";
 
+//  事件循环
   for(;;) {
     double incr, pos;
     SDL_WaitEvent(&event);
@@ -1098,26 +1110,26 @@ int main(int argc, char *argv[]) {
     case SDL_KEYDOWN:
       switch(event.key.keysym.sym) {
       case SDLK_LEFT:
-	incr = -10.0;
-	goto do_seek;
+	      incr = -10.0;
+	      goto do_seek;
       case SDLK_RIGHT:
-	incr = 10.0;
-	goto do_seek;
+	      incr = 10.0;
+	      goto do_seek;
       case SDLK_UP:
-	incr = 60.0;
-	goto do_seek;
+	      incr = 60.0;
+	      goto do_seek;
       case SDLK_DOWN:
-	incr = -60.0;
-	goto do_seek;
+	      incr = -60.0;
+	      goto do_seek;
       do_seek:
-	if(global_video_state) {
-	  pos = get_master_clock(global_video_state);
-	  pos += incr;
-	  stream_seek(global_video_state, (int64_t)(pos * AV_TIME_BASE), incr);
-	}
-	break;
+	      if(global_video_state) {
+	        pos = get_master_clock(global_video_state);
+	        pos += incr;
+	        stream_seek(global_video_state, (int64_t)(pos * AV_TIME_BASE), incr);
+	      }
+        	break;
       default:
-	break;
+	        break;
       }
       break;
     case FF_QUIT_EVENT:

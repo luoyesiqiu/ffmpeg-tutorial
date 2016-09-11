@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   AVFrame         *pFrame = NULL; 
   AVPacket        packet;
   int             frameFinished = -1;
-
+  int             i = 0;
   AVDictionary    *optionsDict = NULL;
   struct SwsContext *sws_ctx = NULL;
 
@@ -60,9 +60,8 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
     exit(1);
   }
-
-　// Open video file
- 　// 从传入的第二个参数获得文件路径，这个函数会读取文件头信息，并把信息保存在 pFormatCtx 结构体当中。
+  // Open video file
+  // 从传入的第二个参数获得文件路径，这个函数会读取文件头信息，并把信息保存在 pFormatCtx 结构体当中。
   // 这个函数后面两个参数分别是： 指定文件格式、格式化选项，当我们设置为 NULL 或 0 时，libavformat 会自动完成这些工作。
   if(avformat_open_input(&pFormatCtx, argv[1], NULL, NULL)!=0)
     return -1; // Couldn't open file
