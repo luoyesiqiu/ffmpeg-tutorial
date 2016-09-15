@@ -118,7 +118,8 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block)
   return ret;
 }
 
-// audio_decode_frame()，把数据存储在一个中间缓冲中，企图将字节转变为流，当我们数据不够的时候提供给我们，当数据塞满时帮我们保存数据以使我们以后再用。
+// audio_decode_frame()，把数据存储在一个中间缓冲中，企图将字节转变为流，当我们数据不够的时候提供给我们，
+// 当数据塞满时帮我们保存数据以使我们以后再用。
 int audio_decode_frame(AVCodecContext *aCodecCtx, uint8_t *audio_buf, int buf_size) {
 
   static AVPacket pkt;
@@ -175,6 +176,7 @@ int audio_decode_frame(AVCodecContext *aCodecCtx, uint8_t *audio_buf, int buf_si
 
 
 // 用户数据就是给 SDL 的指针， stream 就是就是将要写音频数据的缓冲区，还有 len 是缓冲区的大小
+// 当音频设备需要更多数据时调用的回调函数,从队列里面拿数据。
 void audio_callback(void *userdata, Uint8 *stream, int len) {
 
   AVCodecContext *aCodecCtx = (AVCodecContext *)userdata;
@@ -246,8 +248,7 @@ int main(int argc, char *argv[]) {
   // Open video file
   // 从传入的第二个参数获得文件路径，这个函数会读取文件头信息，并把信息保存在 pFormatCtx 结构体当中。
   // 这个函数后面两个参数分别是： 指定文件格式、格式化选项，当我们设置为 NULL 或 0 时，libavformat 会自动完成这些工作。
- // if(avformat_open_input(&pFormatCtx, argv[1], NULL, NULL)!=0)
- if(avformat_open_input(&pFormatCtx, "/home/frank/Music/zotopia.mp4", NULL, NULL)!=0)
+ if(avformat_open_input(&pFormatCtx, argv[1], NULL, NULL)!=0)
     return -1; // Couldn't open file
   
   // Retrieve stream information
@@ -289,7 +290,7 @@ int main(int argc, char *argv[]) {
   wanted_spec.channels = aCodecCtx->channels; // 通道数
   wanted_spec.silence = 0;                    // 这是用来表示静音的值。 因为声音是有符号的，所以静音的值通常为 0。
   wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;// 音频缓存，它让我们设置当 SDL 请求更多音频数据时我们应该给它多大的数据
-  wanted_spec.callback = audio_callback;
+  wanted_spec.callback = audio_callback;      // 当音频设备需要更多数据时调用的回调函数
   wanted_spec.userdata = aCodecCtx;           // SDL 会回调一个回调函数运行的参数。我们将让回调函数得到整个编解码的上下文
   
   if(SDL_OpenAudio(&wanted_spec, &spec) < 0) {

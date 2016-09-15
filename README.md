@@ -29,16 +29,19 @@ I won't be maintaining this project anymore, and am keeping it here for historic
 
 #### 实验例子：
 + tutorial01
-	
-	将前面的５帧图像分别保存到文件。
+		将前面的５帧图像分别保存到文件。
 + tutorial02
-
-	使用SDL播放视频帧数据
+		使用SDL播放视频帧数据。
 + tutorial03
+		播放音视频数据。
 + tutorial04
+		增加独立线程处理视频数据。
 + tutorial05
+		在tutorial04的基础上面增加pts进行同步。
 + tutorial06
-
+		在tutorial05的基础上面选择不同的音视频同步策略。
++ tutorial0７
+		在tutorial06的基础上面增加seek处理。
 
 ####参考资料
 + [FFMPEG完美入门资料](http://download.csdn.net/download/leeking1989/7111345)

@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
         );
 
 	      // Save the frame to disk
-      	if(++i<=100){
+      	if(++i<=5){
             SaveFrame(pFrameRGB, pCodecCtx->width, pCodecCtx->height, i);
         }
         else{

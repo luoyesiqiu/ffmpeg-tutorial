@@ -168,21 +168,7 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block)
   SDL_UnlockMutex(q->mutex);
   return ret;
 }
-static void packet_queue_flush(PacketQueue *q) {
-  AVPacketList *pkt, *pkt1;
 
-  SDL_LockMutex(q->mutex);
-  for(pkt = q->first_pkt; pkt != NULL; pkt = pkt1) {
-    pkt1 = pkt->next;
-    av_free_packet(&pkt->pkt);
-    av_freep(&pkt);
-  }
-  q->last_pkt = NULL;
-  q->first_pkt = NULL;
-  q->nb_packets = 0;
-  q->size = 0;
-  SDL_UnlockMutex(q->mutex);
-}
 double get_audio_clock(VideoState *is) {
   double pts;
   int hw_buf_size, bytes_per_sec, n;
