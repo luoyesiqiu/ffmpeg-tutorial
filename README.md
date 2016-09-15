@@ -5,6 +5,7 @@ ffmpeg-tutorial
 教程实验代码来自[mpenkov/ffmpeg-tutorial](https://github.com/mpenkov/ffmpeg-tutorial)，作者已经停止维护，我在他的基础上，修改了代码学习FFmpeg。
 
 作者的声明如下：
+
 The [original tutorials](http://dranger.com/ffmpeg/) have now been [updated](https://ffmpeg.org/pipermail/libav-user/2015-February/007896.html).
 I won't be maintaining this project anymore, and am keeping it here for historical reasons.
 * * *
@@ -28,9 +29,11 @@ I won't be maintaining this project anymore, and am keeping it here for historic
 
 #### 实验例子：
 + tutorial01
-		将前面的５帧图像分别保存到文件。
+	
+	将前面的５帧图像分别保存到文件。
 + tutorial02
-		使用SDL播放视频帧数据
+
+	使用SDL播放视频帧数据
 + tutorial03
 + tutorial04
 + tutorial05
