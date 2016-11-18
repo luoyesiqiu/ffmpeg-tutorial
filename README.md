@@ -40,7 +40,7 @@ I won't be maintaining this project anymore, and am keeping it here for historic
 		在tutorial04的基础上面增加pts进行同步。
 + tutorial06
 		在tutorial05的基础上面选择不同的音视频同步策略。
-+ tutorial0７
++ tutorial07
 		在tutorial06的基础上面增加seek处理。
 
 ####参考资料
