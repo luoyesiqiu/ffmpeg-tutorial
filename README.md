@@ -43,6 +43,6 @@ I won't be maintaining this project anymore, and am keeping it here for historic
 + tutorial07
 		在tutorial06的基础上面增加seek处理。
 
-####参考资料
+#### 参考资料
 + [FFMPEG完美入门资料](http://download.csdn.net/download/leeking1989/7111345)
 + [一个广院工科生的视音频技术笔记](http://blog.csdn.net/leixiaohua1020)
