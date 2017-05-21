@@ -42,6 +42,8 @@ I won't be maintaining this project anymore, and am keeping it here for historic
 	+ 在tutorial05的基础上面选择不同的音视频同步策略。
 + tutorial07
 	+ 在tutorial06的基础上面增加seek处理。
++ tutorial08
+	+ 使用rtp打包aac和h264文件。
 
 #### 参考资料
 + [FFMPEG完美入门资料](http://download.csdn.net/download/leeking1989/7111345)
