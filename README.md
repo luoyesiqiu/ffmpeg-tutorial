@@ -11,13 +11,14 @@ I won't be maintaining this project anymore, and am keeping it here for historic
 * * *
 
 #### 环境说明：
-+ Ubuntu 16.04.1 LTS
-+ FFmpeg 2.8.7
++ Ubuntu 18.04.2 LTS/x64
++ FFmpeg 3.4.6
 + SDL 1.2 
 
 #### 编译运行
-
-+ 首先通过源代码安装[FFmpeg 2.8.7](https://ffmpeg.org/download.html#releases)，然后编译本教程代码，通过如下命令：
++ 安装SDL 1.2 :
+        sudo apt install libsdl1.2-dev
++ 通过源代码安装[FFmpeg 3.4.6](https://ffmpeg.org/download.html#releases)，然后编译本教程代码，通过如下命令：
 
 	    git clone https://github.com/feixiao/ffmpeg-tutorial.git
     	cd ffmpeg-tutorial
