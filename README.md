@@ -17,7 +17,9 @@ I won't be maintaining this project anymore, and am keeping it here for historic
 
 #### 编译运行
 + 安装SDL 1.2 :
+
         sudo apt install libsdl1.2-dev
+
 + 通过源代码安装[FFmpeg 3.4.6](https://ffmpeg.org/download.html#releases)，然后编译本教程代码，通过如下命令：
 
 	    git clone https://github.com/feixiao/ffmpeg-tutorial.git
